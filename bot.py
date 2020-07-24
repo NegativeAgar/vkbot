@@ -33,6 +33,13 @@ async def sostav(ctx):
         author = ctx.author
         await ctx.send(f" {author.mention}, если ты это написал, значит ты не в составе :)")
 
+@bot.command()
+async def point(ctx):
+		author = ctx.author
+
+		emb = discord.Embed(title="Рейтинг Point's", colour=discord.Colour.orange())
+		emb.add_field(name="Участники:",value="JayBy [`0`] points\nCastia [`0`] points\nFlycks [`0`] points")
+		await ctx.send(embed=emb)
 
 
 
@@ -155,6 +162,11 @@ async def on_ready():
     print(bot.user.id)
     print('Ready.')
     print('------------')
+            
+
+
+
+
             
 token = os.environ.get("TOKEN")
 bot.run(str(token))
