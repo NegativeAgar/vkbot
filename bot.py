@@ -38,7 +38,7 @@ async def point(ctx):
 		author = ctx.author
 
 		emb = discord.Embed(title="Рейтинг Point's", colour=discord.Colour.orange())
-		emb.add_field(name="Участники:",value="JayBy [`8`] points\nCastia [`6`] points\nFlycks [`0`] points")
+		emb.add_field(name="Участники:",value="JayBy [`8`] points\nCastia [`6`] points\nFlycks [`5`] points")
 		await ctx.send(embed=emb)
 
 
