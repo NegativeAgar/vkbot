@@ -63,10 +63,13 @@ async def sostav(ctx):
 @bot.command()
 async def points(ctx, member: discord.Member = None):
 	if member is None:
-		await ctx.send(embed= discord.Embed(description= f"""Количество поинтов **{ctx.author}** составляет **{sql.execute('SELECT points FROM users WHERE id = {}'.format(ctx.author.id)).fetchone()[0]} :gem:**"""))
+		await ctx.send(embed= discord.Embed(description= f"Количество поинтов **{ctx.author}** составляет **{sql.execute('SELECT points FROM users WHERE id = {}'.format(ctx.author.id)).fetchone()[0]} :gem:**"))
 	else:
-		await ctx.send(embed= discord.Embed(description= f"""Количество поинтов **{member}** составляет **{sql.execute('SELECT points FROM users WHERE id = {}'.format(member.id)).fetchone()[0]} :gem:**"""))
+		await ctx.send(embed= discord.Embed(description= f"Количество поинтов **{member}** составляет **{sql.execute('SELECT points FROM users WHERE id = {}'.format(member.id)).fetchone()[0]} :gem:**"))
 		
+
+
+
 @bot.command(aliases= ['+p'])
 @commands.has_permissions(administrator=True)
 async def __p(ctx, member: discord.Member = None, amount: int = None):
