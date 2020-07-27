@@ -63,22 +63,18 @@ async def sostav(ctx):
 @bot.command()
 async def points(ctx, member: discord.Member = None):
 	if member is None:
-		await ctx.send(embed= discord.Embed(
-			description= f"""Количество поинтов **{ctx.author}** составляет **{sql.execute('SELECT points FROM users WHERE id = {}'.format(ctx.author.id)).fetchone()[0]} :gem:**"""
-			))
+		await ctx.send(embed= discord.Embed(description= f"""Количество поинтов **{ctx.author}** составляет **{sql.execute('SELECT points FROM users WHERE id = {}'.format(ctx.author.id)).fetchone()[0]} :gem:**"""))
 	else:
-		await ctx.send(embed= discord.Embed(
-			description= f"""Количество поинтов **{member}** составляет **{sql.execute('SELECT points FROM users WHERE id = {}'.format(member.id)).fetchone()[0]} :gem:**"""
-			))
+		await ctx.send(embed= discord.Embed(description= f"""Количество поинтов **{member}** составляет **{sql.execute('SELECT points FROM users WHERE id = {}'.format(member.id)).fetchone()[0]} :gem:**"""))
 		
 @bot.command(aliases= ['+p'])
 @commands.has_permissions(administrator=True)
 async def __p(ctx, member: discord.Member = None, amount: int = None):
 	if member is None:
-		await ctx.send(f'**{ctx.author}**, укажите пользователя. которому желаете выдать points')
+		await ctx.send(f'**{ctx.author}**, укажите пользователя, которому желаете выдать points')
 	else:
 		if amount is None:
-			await ctx.send(f'**{ctx.author}**, укажите количество. которые хотите добавить пользователю')
+			await ctx.send(f'**{ctx.author}**, укажите количество, которые хотите добавить пользователю')
 		elif amount < 1:
 			await ctx.send(f"**ctx.author**, укажите сумму больше 1")
 		else:
@@ -91,10 +87,10 @@ async def __p(ctx, member: discord.Member = None, amount: int = None):
 @commands.has_permissions(administrator=True)
 async def __take(ctx, member:discord.Member = None, amount=None):
 	if member is None:
-		await ctx.send(f'**{ctx.author}**, укажите пользователя. которому желаете выдать points')
+		await ctx.send(f'**{ctx.author}**, укажите пользователя, у которого желаете забрать points')
 	else:
 		if amount is None:
-			await ctx.send(f'**{ctx.author}**, укажите количество. которые хотите добавить пользователю')
+			await ctx.send(f'**{ctx.author}**, укажите количество, которые хотите забрать')
 		elif amount == 'all':
 			sql.execute("UPDATE users SET points = {} WHERE id = {}".format(0, member.id))	
 			db.commit()	
@@ -231,6 +227,6 @@ async def on_message(msg):
            await msg.add_reaction('✅')
     await bot.process_commands(msg)
 
-
+       
 token = os.environ.get("TOKEN")
 bot.run(str(token))
