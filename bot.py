@@ -67,9 +67,6 @@ async def points(ctx, member: discord.Member = None):
 	else:
 		await ctx.send(embed= discord.Embed(description= f"Количество поинтов **{member}** составляет **{sql.execute('SELECT points FROM users WHERE id = {}'.format(member.id)).fetchone()[0]} :gem:**"))
 		
-
-
-
 @bot.command(aliases= ['+p'])
 @commands.has_permissions(administrator=True)
 async def __p(ctx, member: discord.Member = None, amount: int = None):
