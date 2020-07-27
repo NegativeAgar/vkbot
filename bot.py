@@ -1,13 +1,18 @@
-# Бот подписчик
 import discord
 from discord.ext import commands
 import asyncio
 import random
 import time
 import os
+import sqlite3
+
+db = sqlite3.connect('server.db')
+sql = db.cursor()
+
 
 
 time_string = time.strftime("%A %X")
+
 
 prefix = "."
 bot = commands.Bot(command_prefix=prefix)
@@ -15,6 +20,28 @@ bot = commands.Bot(command_prefix=prefix)
 
 # Команда help
 bot.remove_command('help')
+
+@bot.event
+async def on_ready():
+    game = discord.Game("Помощь [.help] ")
+    await bot.change_presence(status=discord.Status.online, activity=game)
+    print("Бот запущен!")
+
+    sql.execute("""CREATE TABLE IF NOT EXISTS users (
+        name TEXT,
+        id INT,
+        points INT,
+        server_id INT
+    )""")
+
+    for guild in bot.guilds:
+    	for member in guild.members:
+    		if sql.execute(f"SELECT id FROM users WHERE id = {member.id}").fetchone() is None:
+    			sql.execute(f"INSERT INTO users VALUES ('{member}',{member.id},{0},{guild.id})")
+    		else:
+    			pass
+    db.commit()
+    print('База данных запущена!')	
 
 
 # clear
@@ -34,21 +61,74 @@ async def sostav(ctx):
         await ctx.send(f" {author.mention}, если ты это написал, значит ты не в составе :)")
 
 @bot.command()
-async def point(ctx):
-		author = ctx.author
+async def points(ctx, member: discord.Member = None):
+	if member is None:
+		await ctx.send(embed= discord.Embed(
+			description= f"""Количество поинтов **{ctx.author}** составляет **{sql.execute('SELECT points FROM users WHERE id = {}'.format(ctx.author.id)).fetchone()[0]} :gem:**"""
+			))
+	else:
+		await ctx.send(embed= discord.Embed(
+			description= f"""Количество поинтов **{member}** составляет **{sql.execute('SELECT points FROM users WHERE id = {}'.format(member.id)).fetchone()[0]} :gem:**"""
+			))
+		
+@bot.command(aliases= ['+p'])
+@commands.has_permissions(administrator=True)
+async def __p(ctx, member: discord.Member = None, amount: int = None):
+	if member is None:
+		await ctx.send(f'**{ctx.author}**, укажите пользователя. которому желаете выдать points')
+	else:
+		if amount is None:
+			await ctx.send(f'**{ctx.author}**, укажите количество. которые хотите добавить пользователю')
+		elif amount < 1:
+			await ctx.send(f"**ctx.author**, укажите сумму больше 1")
+		else:
+			sql.execute("UPDATE users SET points = points + {} WHERE id = {}".format(amount, member.id))	
+			db.commit()
 
-		emb = discord.Embed(title="Рейтинг Point's", colour=discord.Colour.orange())
-		emb.add_field(name="Участники:",value="JayBy [`8`] points\nCastia [`6`] points\nFlycks [`5`] points")
-		await ctx.send(embed=emb)
+			await ctx.message.add_reaction('✅')
 
+@bot.command(aliases= ['-p'])
+@commands.has_permissions(administrator=True)
+async def __take(ctx, member:discord.Member = None, amount=None):
+	if member is None:
+		await ctx.send(f'**{ctx.author}**, укажите пользователя. которому желаете выдать points')
+	else:
+		if amount is None:
+			await ctx.send(f'**{ctx.author}**, укажите количество. которые хотите добавить пользователю')
+		elif amount == 'all':
+			sql.execute("UPDATE users SET points = {} WHERE id = {}".format(0, member.id))	
+			db.commit()	
 
+		elif int(amount) < 1:
+			await ctx.send(f"**ctx.author**, укажите сумму больше 1")
+		else:
+			sql.execute("UPDATE users SET points = points - {} WHERE id = {}".format(int(amount), member.id))	
+			db.commit()
 
+			await ctx.message.add_reaction('✅')
+
+@bot.command(aliases= ['leaderboard','lb','top'])
+async def __leaderboard(ctx):
+	embed= discord.Embed(title = 'Топ 5')
+	counter = 0
+	for row in sql.execute("SELECT name,points FROM users WHERE server_id = {} ORDER BY points DESC LIMIT 5".format(ctx.guild.id)):
+		counter += 1
+		embed.add_field(
+			name = f'# {counter} | `{row[0]}`',
+			value = f'Points: {row[1]}',inline=False
+		)
+	await ctx.send(embed=embed)	
 # Подключение к каналу
 @bot.event
 async def on_member_join(member: discord.Member):
     role = discord.utils.get(member.guild.roles, id=712600261012488242)
     await member.add_roles(role)
 
+    if sql.execute(f"SELECT id FROM users WHERE id = {member.id}").fetchone() is None:
+    	sql.execute(f"INSERT INTO users VALUES ('{member}',{member.id},{0},{member.guild.id}")
+    	db.commit()
+    else:
+    	pass
 
 
 # commands
@@ -152,21 +232,5 @@ async def on_message(msg):
     await bot.process_commands(msg)
 
 
-@bot.event
-async def on_ready():
-    game = discord.Game("Помощь [.help] ")
-    await bot.change_presence(status=discord.Status.online, activity=game)
-    print("Бот запущен!")
-    print('Logged in as')
-    print(bot.user.name)
-    print(bot.user.id)
-    print('Ready.')
-    print('------------')
-            
-
-
-
-
-            
 token = os.environ.get("TOKEN")
 bot.run(str(token))
