@@ -269,6 +269,7 @@ async def stats(ctx, member:discord.Member=None):
 		idraw.text((145,70), f'Points: {sql.execute("""SELECT points FROM users WHERE id = {}""".format(member.id)).fetchone()[0]}',font= undertext)
 		img.save('user_card.png')
 		await ctx.send(file =discord.File(fp = "user_card.png"))
+
        
 token = os.environ.get("TOKEN")
 bot.run(str(token))
