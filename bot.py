@@ -178,9 +178,6 @@ async def kick(ctx, user:discord.Member,*,reason=None):
 @bot.command()
 @commands.has_permissions(administrator=True)
 async def ban(ctx, user:discord.Member,*,reason=None):
-	    emb = discord.Embed(colour=discord.Colour.red())
-        emb.set_author(name=f'{user.name}#{user.discriminator}  заблокирован', icon_url=user.avatar_url)
-        await ctx.send(embed=emb)
         #logs
         await user.ban(reason=reason, delete_message_days=1)
         channel = bot.get_channel(718960190703140955)
