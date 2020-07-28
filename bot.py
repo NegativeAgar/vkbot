@@ -5,6 +5,9 @@ import random
 import time
 import os
 import sqlite3
+import io 
+import requests
+from PIL import Image, ImageFont, ImageDraw
 
 db = sqlite3.connect('server.db')
 sql = db.cursor()
@@ -63,9 +66,9 @@ async def sostav(ctx):
 @bot.command()
 async def points(ctx, member: discord.Member = None):
 	if member is None:
-		await ctx.send(embed= discord.Embed(description= f"Количество поинтов **{ctx.author}** составляет **{sql.execute('SELECT points FROM users WHERE id = {}'.format(ctx.author.id)).fetchone()[0]} :gem:**"))
+		await ctx.send(embed= discord.Embed(description= f"Количество поинтов **{ctx.author}** составляет **{sql.execute('SELECT points FROM users WHERE id = {}'.format(ctx.author.id)).fetchone()[0]} :gem:**",colour=discord.Colour.blue()))
 	else:
-		await ctx.send(embed= discord.Embed(description= f"Количество поинтов **{member}** составляет **{sql.execute('SELECT points FROM users WHERE id = {}'.format(member.id)).fetchone()[0]} :gem:**"))
+		await ctx.send(embed= discord.Embed(description= f"Количество поинтов **{member}** составляет **{sql.execute('SELECT points FROM users WHERE id = {}'.format(member.id)).fetchone()[0]} :gem:**",colour=discord.Colour.blue()))
 		
 @bot.command(aliases= ['+p'])
 @commands.has_permissions(administrator=True)
@@ -105,7 +108,7 @@ async def __take(ctx, member:discord.Member = None, amount=None):
 
 @bot.command(aliases= ['leaderboard','lb','top'])
 async def __leaderboard(ctx):
-	embed= discord.Embed(title = 'Топ 5')
+	embed= discord.Embed(title = 'Топ 5',colour=discord.Colour.blue())
 	counter = 0
 	for row in sql.execute("SELECT name,points FROM users WHERE server_id = {} ORDER BY points DESC LIMIT 5".format(ctx.guild.id)):
 		counter += 1
@@ -115,6 +118,7 @@ async def __leaderboard(ctx):
 		)
 	await ctx.send(embed=embed)	
 # Подключение к каналу
+
 @bot.event
 async def on_member_join(member: discord.Member):
     role = discord.utils.get(member.guild.roles, id=712600261012488242)
@@ -133,20 +137,22 @@ async def help(ctx):
         await ctx.channel.purge(limit=1)
         emb = discord.Embed(title="Помощь по боту", colour=discord.Colour.orange())
         emb.add_field(name='Команды:',value='`.info @id` - Посмотреть статистику'
-                            '\n`.sostav` - Состав команды!',inline=False)
+                            '\n`.sostav` - Состав команды!'
+                            '\n`.points @id` - посмотреть поинты',inline=False)
         await ctx.send(embed=emb)
 
 
 
 # info
 @bot.command()
-async def info(ctx, user: discord.Member):
-    emb = discord.Embed(title="Статистика `{}`".format(user.name), colour=discord.Colour.blue())
+async def info(ctx, member: discord.Member):
+    emb = discord.Embed(title="Статистика `{}`".format(member.name), colour=discord.Colour.blue())
     await ctx.channel.purge(limit=1)
-    emb.add_field(name='Имя:', value=user.name)
-    emb.add_field(name="Зашёл на канал:", value=str(user.joined_at)[:10])
-    emb.add_field(name='ID пользователя:', value=user.id, inline=False)
-    emb.set_thumbnail(url=str(user.avatar_url))
+    emb.add_field(name='Имя:', value=member.name)
+    emb.add_field(name="Зашёл на канал:", value=str(member.joined_at)[:10])
+    emb.add_field(name='ID пользователя:', value=member.id, inline=False)
+    emb.add_field(name='Points:', value=sql.execute('SELECT points FROM users WHERE id = {}'.format(member.id)).fetchone()[0], inline=False)
+    emb.set_thumbnail(url=str(member.avatar_url))
     emb.set_footer(text='Смотрит {}'.format(ctx.author.name), icon_url=ctx.author.avatar_url)
     await ctx.send(embed=emb)
 
@@ -154,12 +160,16 @@ async def info(ctx, user: discord.Member):
 @bot.command()
 @commands.has_permissions(administrator=True)
 async def kick(ctx, user:discord.Member,*,reason=None):
+        emb = discord.Embed(colour=discord.Colour.red())
+        emb.set_author(name=f'{user.name}#{user.discriminator}  исключен', icon_url=user.avatar_url)
+        await ctx.send(embed=emb)
+        #logs
         channel = bot.get_channel(718960190703140955)
         await user.kick(reason=reason)
         emb = discord.Embed(title="`{}` исключен".format(user.name), colour=discord.Colour.red())
         emb.add_field(name="Причина:", value=reason)
         emb.add_field(name='ID пользователя:', value=user.id)
-        emb.add_field(name='Модератор', value="{}".format(ctx.author.name),inline=False)
+        emb.add_field(name='Модератор:', value="{}".format(ctx.author.name),inline=False)
         emb.set_thumbnail(url=str(user.avatar_url))
         emb.set_footer(text=time_string)
         await channel.send(embed=emb)
@@ -168,9 +178,13 @@ async def kick(ctx, user:discord.Member,*,reason=None):
 @bot.command()
 @commands.has_permissions(administrator=True)
 async def ban(ctx, user:discord.Member,*,reason=None):
+	    emb = discord.Embed(colour=discord.Colour.red())
+        emb.set_author(name=f'{user.name}#{user.discriminator}  заблокирован', icon_url=user.avatar_url)
+        await ctx.send(embed=emb)
+        #logs
         await user.ban(reason=reason, delete_message_days=1)
         channel = bot.get_channel(718960190703140955)
-        emb = discord.Embed(title="`{}` забанен".format(user.name), colour=discord.Colour.red())
+        emb = discord.Embed(title="`{}` заблокирован".format(user.name), colour=discord.Colour.red())
         emb.add_field(name="Причина:", value=reason)
         emb.add_field(name='ID пользователя:', value=user.id)
         emb.add_field(name='Модератор', value="{}".format(ctx.author.name),inline=False)
@@ -192,14 +206,6 @@ async def mute(ctx, user:discord.Member,*,time1=120):
         emb.set_thumbnail(url=str(user.avatar_url))
         emb.set_footer(text='{}'.format(time_string))
         await channel.send(embed=emb)
-        time.sleep(time1*60)
-        emb = discord.Embed(title="{} заглушка снята".format(user.name), colour=discord.Colour.orange())
-        emb.add_field(name='ID пользователя:', value="{}".format(user.id))
-        emb.add_field(name='Модератор', value="Auto")
-        emb.set_thumbnail(url=str(user.avatar_url))
-        emb.set_footer(text=time_string)
-        await channel.send(embed=emb)
-        await user.remove_roles(role)
 
 @bot.command()
 @commands.has_permissions(administrator=True)
@@ -216,17 +222,56 @@ async def unmute(ctx,user:discord.Member):
         sendd =f'{author.mention} _**Пользователь не заглушен!**_'
         await ctx.send(sendd)
 
-@bot.event
-@commands.has_permissions(administrator=True)
-async def on_message(msg):
-    reacit = [".ban", ".mute", ".kick", ".unmute"]
-    author = msg.author
-    channel = msg.channel
-    for i in reacit:
-        if i in msg.content:
-           await msg.add_reaction('✅')
-    await bot.process_commands(msg)
 
+@bot.command()
+async def stats(ctx, member:discord.Member=None):
+	await ctx.channel.purge(limit=1)
+	if member is None:
+		img = Image.new('RGBA', (400, 130), '#232529')
+		url = str(ctx.author.avatar_url)[:-10]
+
+		response = requests.get(url, stream = True)
+		response = Image.open(io.BytesIO(response.content))
+		response = response.convert('RGBA')
+		response = response.resize((100, 100), Image.ANTIALIAS)
+
+		img.paste(response, (15, 15, 115, 115))
+
+		idraw = ImageDraw.Draw(img)
+		name = ctx.author.name
+		tag = ctx.author.discriminator
+
+		headline = ImageFont.truetype('arial.ttf', size=20)
+		undertext = ImageFont.truetype('arial.ttf', size=12)
+
+		idraw.text((145,15), f'{name}#{tag}', font=headline )
+		idraw.text((145,50), f'ID: {ctx.author.id}',font= undertext)
+		idraw.text((145,70), f'Points: {sql.execute("""SELECT points FROM users WHERE id = {}""".format(ctx.author.id)).fetchone()[0]}',font= undertext)
+		img.save('user_card.png')
+		await ctx.send(file =discord.File(fp = "user_card.png"))
+	else:
+		img = Image.new('RGBA', (400, 130), '#232529')
+		url = str(member.avatar_url)[:-10]
+
+		response = requests.get(url, stream = True)
+		response = Image.open(io.BytesIO(response.content))
+		response = response.convert('RGBA')
+		response = response.resize((100, 100), Image.ANTIALIAS)
+
+		img.paste(response, (15, 15, 115, 115))
+
+		idraw = ImageDraw.Draw(img)
+		name = member.name
+		tag = member.discriminator
+
+		headline = ImageFont.truetype('arial.ttf', size=20)
+		undertext = ImageFont.truetype('arial.ttf', size=12)
+
+		idraw.text((145,15), f'{name}#{tag}', font=headline )
+		idraw.text((145,50), f'ID: {member.id}',font= undertext)
+		idraw.text((145,70), f'Points: {sql.execute("""SELECT points FROM users WHERE id = {}""".format(member.id)).fetchone()[0]}',font= undertext)
+		img.save('user_card.png')
+		await ctx.send(file =discord.File(fp = "user_card.png"))
        
 token = os.environ.get("TOKEN")
 bot.run(str(token))
