@@ -9,7 +9,7 @@ import io
 import requests
 from PIL import Image, ImageFont, ImageDraw
 
-db = sqlite3.connect('server.db')
+db = sqlite3.connect('server1.db')
 sql = db.cursor()
 
 
