@@ -36,11 +36,12 @@ async def on_ready():
         points INT,
         server_id INT
     )""")
-
+    db.commit()
     for guild in bot.guilds:
     	for member in guild.members:
     		if sql.execute(f"SELECT id FROM users WHERE id = {member.id}").fetchone() is None:
     			sql.execute(f"INSERT INTO users VALUES ('{member}',{member.id},{0},{guild.id})")
+			db.commit()
     		else:
     			pass
     db.commit()
