@@ -30,7 +30,7 @@ async def on_ready():
     await bot.change_presence(status=discord.Status.online, activity=game)
     print("Бот запущен!")
 
-    sql.execute("""CREATE TABLE IF NOT EXISTS users (
+    sql.execute("""CREATE TABLE users (
         name TEXT,
         id INT,
         points INT,
