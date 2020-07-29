@@ -9,7 +9,7 @@ import io
 import requests
 from PIL import Image, ImageFont, ImageDraw
 
-db = sqlite3.connect('server1.db')
+db = sqlite3.connect('server.db')
 sql = db.cursor()
 
 
@@ -30,18 +30,17 @@ async def on_ready():
     await bot.change_presence(status=discord.Status.online, activity=game)
     print("Бот запущен!")
 
-    sql.execute("""CREATE TABLE users (
+    sql.execute("""CREATE TABLE IF NOT EXISTS users (
         name TEXT,
         id INT,
         points INT,
         server_id INT
     )""")
-    db.commit()
     for guild in bot.guilds:
     	for member in guild.members:
     		if sql.execute(f"SELECT id FROM users WHERE id = {member.id}").fetchone() is None:
     			sql.execute(f"INSERT INTO users VALUES ('{member}',{member.id},{0},{guild.id})")
-			db.commit()
+    			db.commit()
     		else:
     			pass
     db.commit()
@@ -55,7 +54,7 @@ async def clear(ctx, count=20):
     author = ctx.message.author
     await ctx.channel.purge(limit=count)
     await ctx.send(embed=discord.Embed(description=f'Чат очистил администратор: {author.mention}'))
-    time.sleep(3.0)
+    await sleep(3.0)
     await ctx.channel.purge(limit=1)
 
 # Чат бот
@@ -193,7 +192,7 @@ async def ban(ctx, user:discord.Member,*,reason=None):
 
 @bot.command()
 @commands.has_permissions(administrator=True)
-async def mute(ctx, user:discord.Member,*,time1=120):
+async def mut1e(ctx, user:discord.Member,*,time1=120):
         role = discord.utils.get(user.guild.roles, id=715186293549826068)
         channel = bot.get_channel(718960190703140955)
         await user.add_roles(role)
@@ -271,6 +270,32 @@ async def stats(ctx, member:discord.Member=None):
 		img.save('user_card.png')
 		await ctx.send(file =discord.File(fp = "user_card.png"))
 
+
+@bot.command()
+@commands.has_permissions(administrator=True)
+async def mute(ctx, member:discord.Member, time = None, *, reason= None):
+	role = discord.utils.get(member.guild.roles, id=715186293549826068)
+	channel = bot.get_channel(718960190703140955)
+	await member.add_roles(role)
+	#answer
+	emb = discord.Embed(colour=discord.Colour.red())
+	emb.set_author(name=f'🔇 {member.name}#{member.discriminator} блокировка чата!',icon_url=member.avatar_url)
+	await ctx.send(embed=emb)
+	#log
+	emb = discord.Embed(title="{} заглушен".format(member.name), colour=discord.Colour.red())
+	emb.add_field(name='ID пользователя:', value="{}".format(member.id))
+	emb.add_field(name='Длительность:', value='{} минут'.format(time))
+	emb.add_field(name='Модератор:', value="{}".format(ctx.author.name))
+	emb.add_field(name='Причина:',value=reason)
+	emb.set_thumbnail(url=str(member.avatar_url))
+	await channel.send(embed=emb)
+	await asyncio.sleep(time)
+	await member.remove_roles(role)
+	emb = discord.Embed(title="{} заглушка снята".format(member.name), colour=discord.Colour.orange())
+	emb.add_field(name='ID пользователя:', value="{}".format(member.id))
+	emb.add_field(name='Модератор', value="Auto")
+	emb.set_thumbnail(url=str(member.avatar_url))
+	await channel.send(embed=emb)
        
 token = os.environ.get("TOKEN")
 bot.run(str(token))
