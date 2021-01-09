@@ -1,3 +1,4 @@
+
 import discord
 from discord.ext import commands
 import asyncio
@@ -32,21 +33,20 @@ async def on_message(msg):
 		if msg.channel == channel_gen:
 			for i in msg.content:
 				if i in turk or i in rus:
-					g = ('⛔ '+ str(msg.author.mention) +' only English!')
+					g = ('⛔ '+ str(msg.author.mention) +' here General chat! only English language!')
 			await channel_gen.send(g)
 		if msg.channel == channel_russ:
 			for i in msg.content:
 				if i in turk:
-					g = ('⛔ '+ str(msg.author.mention) +' only Russian!')
+					g = ('⛔ '+ str(msg.author.mention) +' here Russian chat! only Russian language!')
 			await channel_russ.send(g)
 		if msg.channel == channel_turk:
 			for i in msg.content:
 				if i in rus:
-					g = ('⛔ '+ str(msg.author.mention) +' only Turkish!')	
+					g = ('⛔ '+ str(msg.author.mention) +' here Turkish chat! only Turkish language!')	
 			await channel_turk.send(g)	
 
 	await bot.process_commands(msg)
-
 
 token = os.environ.get("TOKEN")
 bot.run(str(token))
